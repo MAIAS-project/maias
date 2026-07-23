@@ -1,0 +1,400 @@
+maias: "0.2"
+app:
+  name: SocialNet
+  description: A social network — feed, five tabs, modals and sheets, parameterised profiles, deep links.
+  links:
+    scheme: socialnet
+  navigation:
+    primary:
+      label: Primary Nav
+      screens:
+        - feed
+        - explore
+        - notifications
+        - messages
+        - profile
+    secondary:
+      label: Secondary Nav
+      screens:
+        - post_detail
+        - compose_post
+        - story_viewer
+        - user_profile
+        - conversation
+        - edit_profile
+        - settings
+  flows:
+    - name: main
+      description: Consume and create content from the feed.
+      entry_screen: feed
+      screens:
+        - feed
+        - post_detail
+        - compose_post
+        - story_viewer
+    - name: discovery
+      description: Find people and topics.
+      entry_screen: explore
+      screens:
+        - explore
+        - user_profile
+    - name: notifications
+      description: Activity on your content.
+      entry_screen: notifications
+      screens:
+        - notifications
+    - name: messaging
+      description: Direct conversations.
+      entry_screen: messages
+      screens:
+        - messages
+        - conversation
+    - name: account
+      description: Your own presence and preferences.
+      entry_screen: profile
+      screens:
+        - profile
+        - edit_profile
+        - settings
+screens:
+  - id: feed
+    title: Feed
+    type: list
+    path: /feed
+    description: Chronological posts from followed accounts, with a story rail on top.
+    deep_link: true
+    elements:
+      - label: Stories
+        type: heading
+      - label: Ana
+        type: avatar
+      - label: What's happening?
+        type: text_field
+      - label: Compose
+        type: button
+        target: compose_post
+      - label: ""
+        type: divider
+      - label: Morning ride to the coast
+        type: card
+      - label: ""
+        type: video
+      - label: Like | Comment | Share
+        type: chips
+      - label: View post
+        type: list_item
+        target: post_detail
+    states:
+      empty:
+        description: New account following nobody yet.
+        elements:
+          - label: Your feed is empty — follow some people in Explore
+            type: empty_state
+          - label: Go exploring
+            type: button
+            target: explore
+      loading:
+        description: First sync after app start.
+      error:
+        description: Feed service unreachable; cached posts shown stale.
+        elements:
+          - label: Couldn't refresh your feed
+            type: banner
+          - label: Retry
+            type: button
+    navigation:
+      secondary:
+        - label: Compose
+          target: compose_post
+          presentation: modal
+        - label: View story
+          target: story_viewer
+          presentation: sheet
+    data:
+      reads:
+        - posts
+        - stories
+      writes:
+        - post_reactions
+
+  - id: post_detail
+    title: Post
+    type: detail
+    path: /feed/post/:post_id
+    description: One post with media, reactions, and its comment thread.
+    deep_link: true
+    back:
+      target: feed
+    elements:
+      - label: ""
+        type: image
+      - label: Morning ride to the coast
+        type: paragraph
+      - label: Like | Comment | Share
+        type: chips
+      - label: Comments
+        type: heading
+      - label: Great shot!
+        type: list_item
+      - label: Add a comment
+        type: text_field
+    navigation:
+      secondary:
+        - label: Author profile
+          target: user_profile
+    data:
+      reads:
+        - post
+        - comments
+      writes:
+        - comments
+        - post_reactions
+
+  - id: compose_post
+    title: New Post
+    type: form
+    path: /feed/compose
+    description: Create a post with text and media. Opens as a modal over any screen.
+    presentation: modal
+    auth: required
+    back:
+      target: feed
+    elements:
+      - label: What's happening?
+        type: text_field
+      - label: ""
+        type: image
+      - label: Add photo | Add video | Add poll
+        type: chips
+      - label: Post
+        type: button
+        target: feed
+        presentation: replace
+    data:
+      writes:
+        - posts
+
+  - id: story_viewer
+    title: Story
+    type: status
+    path: /feed/story/:story_id
+    description: Full-bleed ephemeral story playback with progress across items.
+    presentation: sheet
+    back:
+      target: feed
+    elements:
+      - label: Story progress
+        type: progress
+      - label: ""
+        type: image
+      - label: Reply to story
+        type: text_field
+    data:
+      reads:
+        - stories
+
+  - id: explore
+    title: Explore
+    type: search
+    path: /explore
+    description: Search people and topics; trending content grid.
+    elements:
+      - label: Search people and topics
+        type: search_bar
+      - label: For you | Trending | News | Sport
+        type: segmented_control
+      - label: ""
+        type: image
+      - label: ""
+        type: image
+      - label: '@wanderer — landscape photography'
+        type: list_item
+        target: user_profile
+    states:
+      empty:
+        description: Query with no matches.
+        elements:
+          - label: No results — try another search
+            type: empty_state
+    data:
+      reads:
+        - trending_topics
+        - search_results
+
+  - id: user_profile
+    title: User Profile
+    type: detail
+    path: /explore/user/:username
+    description: Another user's public profile, addressable by username.
+    deep_link: true
+    back:
+      target: explore
+    elements:
+      - label: Wanderer
+        type: avatar
+      - label: Posts | Followers | Following
+        type: segmented_control
+      - label: Follows you
+        type: banner
+      - label: Follow
+        type: button
+      - label: ""
+        type: image
+    data:
+      reads:
+        - user_profile
+      writes:
+        - follow_state
+
+  - id: notifications
+    title: Notifications
+    type: list
+    path: /notifications
+    description: Likes, comments, follows, and mentions on your content.
+    auth: required
+    elements:
+      - label: All | Mentions
+        type: segmented_control
+      - label: Ana liked your post
+        type: list_item
+        target: post_detail
+      - label: New follower
+        type: list_item
+        target: user_profile
+    states:
+      empty:
+        description: No activity yet.
+        elements:
+          - label: Nothing yet — post something!
+            type: empty_state
+    data:
+      reads:
+        - notifications
+      writes:
+        - notification_read_state
+
+  - id: messages
+    title: Messages
+    type: list
+    path: /messages
+    description: Direct-message conversation list.
+    auth: required
+    elements:
+      - label: Search messages
+        type: search_bar
+      - label: Ana — see you tomorrow?
+        type: list_item
+        target: conversation
+      - label: Ben — thanks!
+        type: list_item
+        target: conversation
+    states:
+      empty:
+        description: No conversations started.
+        elements:
+          - label: No messages yet
+            type: empty_state
+    data:
+      reads:
+        - conversations
+
+  - id: conversation
+    title: Conversation
+    type: detail
+    path: /messages/:conversation_id
+    description: One direct-message thread with composer.
+    auth: required
+    back:
+      target: messages
+    elements:
+      - label: Ana
+        type: avatar
+      - label: See you tomorrow?
+        type: paragraph
+      - label: ""
+        type: divider
+      - label: Message
+        type: text_field
+      - label: Send
+        type: button
+    data:
+      reads:
+        - messages
+      writes:
+        - messages
+
+  - id: profile
+    title: Profile
+    type: container
+    path: /profile
+    description: Your own profile — stats, grid, and entry to editing and settings.
+    auth: required
+    elements:
+      - label: You
+        type: avatar
+      - label: Posts | 128
+        type: label_value
+      - label: Followers | 2,140
+        type: label_value
+      - label: Grid | List | Tagged
+        type: segmented_control
+      - label: ""
+        type: image
+      - label: Edit profile
+        type: button
+        target: edit_profile
+    navigation:
+      secondary:
+        - label: Edit profile
+          target: edit_profile
+        - label: Settings
+          target: settings
+    data:
+      reads:
+        - own_profile
+
+  - id: edit_profile
+    title: Edit Profile
+    type: form
+    path: /profile/edit
+    description: Change display name, avatar, and bio.
+    auth: required
+    back:
+      target: profile
+    elements:
+      - label: You
+        type: avatar
+      - label: Display name
+        type: text_field
+      - label: Bio
+        type: text_field
+      - label: Save
+        type: button
+        target: profile
+        presentation: replace
+    data:
+      reads:
+        - own_profile
+      writes:
+        - own_profile
+
+  - id: settings
+    title: Settings
+    type: menu
+    path: /profile/settings
+    description: Notification, privacy, and account preferences.
+    auth: required
+    back:
+      target: profile
+    elements:
+      - label: Push notifications
+        type: toggle
+      - label: Private account
+        type: toggle
+      - label: Muted words
+        type: list_item
+      - label: Log out
+        type: button
+    data:
+      writes:
+        - preferences

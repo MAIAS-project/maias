@@ -1,0 +1,318 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:maias:schema:0.2",
+  "title": "MAIAS — Mobile App Information Architecture Schema",
+  "description": "Formal definition of MAIAS documents, spec v0.2. YAML is the primary serialisation; an equivalent JSON document validates identically. Semantic rules that cannot be expressed here (unique IDs/paths, dangling targets, registry membership, reachability) are enforced by `maias validate` lint — see docs/spec/README.md.",
+  "type": "object",
+  "properties": {
+    "maias": {
+      "type": "string",
+      "pattern": "^0\\.[0-9]+$",
+      "description": "Spec version header, e.g. \"0.1\". Always a quoted string."
+    },
+    "app": { "$ref": "#/$defs/app" },
+    "screens": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/screen" },
+      "description": "All screen definitions."
+    }
+  },
+  "required": ["maias", "app", "screens"],
+  "patternProperties": { "^x_": {} },
+  "additionalProperties": false,
+
+  "$defs": {
+    "screenId": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "description": "snake_case screen identifier."
+    },
+    "flowName": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*$",
+      "description": "snake_case flow name."
+    },
+    "path": {
+      "type": "string",
+      "pattern": "^/[a-z0-9-]+(/([a-z0-9-]+|:[a-z][a-z0-9_]*))*$",
+      "description": "Kebab-case URL path with optional :param segments, e.g. /map/location/:id."
+    },
+    "presentation": {
+      "type": "string",
+      "enum": ["push", "replace", "modal", "sheet"],
+      "description": "How the target screen is presented. Default: push."
+    },
+    "screenType": {
+      "description": "Core screen type, or an x_-prefixed custom type.",
+      "anyOf": [
+        {
+          "type": "string",
+          "enum": [
+            "action",
+            "action_sheet",
+            "container",
+            "detail",
+            "form",
+            "informational",
+            "list",
+            "map",
+            "marketing",
+            "menu",
+            "search",
+            "status"
+          ]
+        },
+        { "type": "string", "pattern": "^x_[a-z][a-z0-9_]*$" }
+      ]
+    },
+    "app": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "description": { "type": "string" },
+        "links": {
+          "type": "object",
+          "properties": {
+            "scheme": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]*$",
+              "description": "App URL scheme for deep links, e.g. shopfront → shopfront://…"
+            }
+          },
+          "required": ["scheme"],
+          "patternProperties": { "^x_": {} },
+          "additionalProperties": false
+        },
+        "navigation": { "$ref": "#/$defs/navigationRegistry" },
+        "flows": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/flow" }
+        }
+      },
+      "required": ["name", "navigation", "flows"],
+      "patternProperties": { "^x_": {} },
+      "additionalProperties": false
+    },
+    "navigationRegistry": {
+      "type": "object",
+      "description": "Every screen must appear in exactly one of primary.screens / secondary.screens (lint-enforced).",
+      "properties": {
+        "primary": { "$ref": "#/$defs/navigationGroup" },
+        "secondary": { "$ref": "#/$defs/navigationGroup" }
+      },
+      "required": ["primary", "secondary"],
+      "patternProperties": { "^x_": {} },
+      "additionalProperties": false
+    },
+    "navigationGroup": {
+      "type": "object",
+      "properties": {
+        "label": { "type": "string" },
+        "screens": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/screenId" },
+          "description": "Screen IDs; primary = tab order."
+        }
+      },
+      "required": ["screens"],
+      "patternProperties": { "^x_": {} },
+      "additionalProperties": false
+    },
+    "flow": {
+      "type": "object",
+      "properties": {
+        "name": { "$ref": "#/$defs/flowName" },
+        "description": { "type": "string" },
+        "entry_screen": { "$ref": "#/$defs/screenId" },
+        "screens": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/screenId" }
+        }
+      },
+      "required": ["name", "entry_screen", "screens"],
+      "patternProperties": { "^x_": {} },
+      "additionalProperties": false
+    },
+    "screen": {
+      "type": "object",
+      "properties": {
+        "id": { "$ref": "#/$defs/screenId" },
+        "title": { "type": "string", "minLength": 1 },
+        "type": { "$ref": "#/$defs/screenType" },
+        "path": { "$ref": "#/$defs/path" },
+        "description": {
+          "type": "string",
+          "description": "What the screen does and why it exists. Lint warns when absent."
+        },
+        "presentation": { "$ref": "#/$defs/presentation" },
+        "auth": {
+          "type": "string",
+          "enum": ["none", "required"],
+          "description": "Access gate. Default: none."
+        },
+        "deep_link": {
+          "type": "boolean",
+          "description": "Externally addressable at <scheme>://<path>. Default: false."
+        },
+        "back": { "$ref": "#/$defs/backLink" },
+        "features": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Named content/capability blocks (documentation-level)."
+        },
+        "actions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/actionEntry" },
+          "description": "Interactive elements that don't navigate."
+        },
+        "elements": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/element" },
+          "description": "UI element declarations, in render order."
+        },
+        "states": { "$ref": "#/$defs/states" },
+        "navigation": { "$ref": "#/$defs/screenNavigation" },
+        "data": { "$ref": "#/$defs/data" }
+      },
+      "required": ["id", "title", "type", "path"],
+      "patternProperties": { "^x_": {} },
+      "additionalProperties": false
+    },
+    "backLink": {
+      "type": "object",
+      "description": "Declared back affordance (since spec 0.2): where the header back button leads. When label is omitted, renderers use the target screen's title.",
+      "properties": {
+        "label": { "type": "string", "minLength": 1 },
+        "target": { "$ref": "#/$defs/screenId" }
+      },
+      "required": ["target"],
+      "patternProperties": { "^x_": {} },
+      "additionalProperties": false
+    },
+    "actionEntry": {
+      "description": "Plain string, or {label, external?} for actions that leave the app.",
+      "oneOf": [
+        { "type": "string" },
+        {
+          "type": "object",
+          "properties": {
+            "label": { "type": "string" },
+            "external": { "type": "boolean" }
+          },
+          "required": ["label"],
+          "patternProperties": { "^x_": {} },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "element": {
+      "type": "object",
+      "description": "A design-system-neutral UI element. `type` beyond the core taxonomy is allowed by design (fallback guarantee); lint warns when an unknown type lacks the x_ prefix.",
+      "properties": {
+        "label": { "type": "string" },
+        "type": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "description": "Core taxonomy type (see docs/spec/05-elements.md) or x_-prefixed custom type."
+        },
+        "target": { "$ref": "#/$defs/screenId" },
+        "presentation": { "$ref": "#/$defs/presentation" }
+      },
+      "required": ["type"],
+      "patternProperties": { "^x_": {} },
+      "additionalProperties": false
+    },
+    "states": {
+      "type": "object",
+      "description": "Non-default screen states. The default state is the screen's own `elements`.",
+      "properties": {
+        "empty": { "$ref": "#/$defs/stateVariant" },
+        "loading": { "$ref": "#/$defs/stateVariant" },
+        "error": { "$ref": "#/$defs/stateVariant" }
+      },
+      "patternProperties": { "^x_": {} },
+      "additionalProperties": false
+    },
+    "stateVariant": {
+      "type": "object",
+      "properties": {
+        "description": { "type": "string" },
+        "elements": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/element" },
+          "description": "Full replacement element list for this state."
+        }
+      },
+      "patternProperties": { "^x_": {} },
+      "additionalProperties": false
+    },
+    "screenNavigation": {
+      "type": "object",
+      "properties": {
+        "primary": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/navigationItem" },
+          "description": "Tab-bar items; only meaningful on primary screens."
+        },
+        "secondary": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/navigationItem" },
+          "description": "Contextual links to other screens."
+        },
+        "actions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/navigationAction" },
+          "description": "Non-navigating interactions."
+        }
+      },
+      "patternProperties": { "^x_": {} },
+      "additionalProperties": false
+    },
+    "navigationItem": {
+      "type": "object",
+      "properties": {
+        "label": { "type": "string", "minLength": 1 },
+        "target": { "$ref": "#/$defs/screenId" },
+        "presentation": { "$ref": "#/$defs/presentation" }
+      },
+      "required": ["label", "target"],
+      "patternProperties": { "^x_": {} },
+      "additionalProperties": false
+    },
+    "navigationAction": {
+      "type": "object",
+      "properties": {
+        "label": { "type": "string", "minLength": 1 },
+        "external": {
+          "type": "boolean",
+          "description": "True when the action leaves the app (web link, share sheet, …)."
+        }
+      },
+      "required": ["label"],
+      "patternProperties": { "^x_": {} },
+      "additionalProperties": false
+    },
+    "data": {
+      "type": "object",
+      "properties": {
+        "reads": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Data keys the screen consumes."
+        },
+        "writes": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Data keys the screen creates or mutates."
+        }
+      },
+      "patternProperties": { "^x_": {} },
+      "additionalProperties": false
+    }
+  }
+}

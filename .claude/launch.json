@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "maias-browser-web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "web", "--workspace", "maias-browser", "--", "--port", "8081"],
+      "port": 8081
+    }
+  ]
+}

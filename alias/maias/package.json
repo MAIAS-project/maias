@@ -1,0 +1,33 @@
+{
+  "name": "maias",
+  "version": "0.2.0",
+  "description": "The `maias` command — alias for @maias/cli, so `npx maias` works. MAIAS validate / fmt / rename.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MAIAS-project/maias.git",
+    "directory": "alias/maias"
+  },
+  "keywords": [
+    "maias",
+    "cli",
+    "information-architecture",
+    "yaml",
+    "validation",
+    "lint"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "type": "module",
+  "bin": {
+    "maias": "./bin/maias.js"
+  },
+  "files": [
+    "bin",
+    "NOTICE"
+  ],
+  "dependencies": {
+    "@maias/cli": "^0.2.0"
+  }
+}

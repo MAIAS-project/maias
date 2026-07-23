@@ -1,0 +1,20 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.MAIAS-project/maias",
+  "description": "Validate, query, and safely edit MAIAS app-IA documents: cascading renames, atomic element batches.",
+  "repository": {
+    "url": "https://github.com/MAIAS-project/maias",
+    "source": "github"
+  },
+  "version": "0.3.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@maias/mcp",
+      "version": "0.3.0",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}

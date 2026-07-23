@@ -1,0 +1,44 @@
+{
+  "name": "@maias/cli",
+  "version": "0.2.0",
+  "description": "MAIAS command-line tools: maias validate, maias fmt, maias rename.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MAIAS-project/maias.git",
+    "directory": "packages/cli"
+  },
+  "keywords": [
+    "maias",
+    "cli",
+    "information-architecture",
+    "yaml",
+    "validation",
+    "lint"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "type": "module",
+  "bin": {
+    "maias": "./bin/maias.js"
+  },
+  "main": "./dist/main.js",
+  "types": "./dist/main.d.ts",
+  "files": [
+    "bin",
+    "dist",
+    "NOTICE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "@maias/core": "^0.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.0"
+  }
+}

@@ -1,0 +1,137 @@
+maias: "0.2"
+app:
+  name: Todo List
+  description: A minimal list-keeping app used as the core test fixture.
+  links:
+    scheme: todo
+  navigation:
+    primary:
+      label: Primary Nav
+      screens:
+        - home
+        - settings
+    secondary:
+      label: Secondary Nav
+      screens:
+        - task_detail
+        - task_new
+        - about
+  flows:
+    - name: main
+      description: Browse and manage tasks.
+      entry_screen: home
+      screens:
+        - home
+        - task_detail
+        - task_new
+    - name: settings
+      description: Preferences and app info.
+      entry_screen: settings
+      screens:
+        - settings
+        - about
+
+# ─────────────────────────────────────────────
+#  MAIN
+# ─────────────────────────────────────────────
+
+screens:
+  - id: home
+    title: My Tasks
+    type: list
+    path: /tasks
+    description: All tasks, newest first.
+    elements:
+      - label: Search tasks
+        type: search_bar
+      - label: Buy milk
+        type: list_item
+        target: task_detail
+      - label: Add task
+        type: button
+        target: task_new
+        presentation: modal
+      - label: Celebrate
+        type: x_todo_confetti
+    states:
+      empty:
+        description: First run, or all tasks deleted.
+        elements:
+          - label: No tasks yet — add your first one
+            type: empty_state
+          - label: Add task
+            type: button
+            target: task_new
+    data:
+      reads:
+        - tasks
+    x_owner_team: core
+
+  - id: task_detail
+    title: Task Detail
+    type: detail
+    path: /tasks/:id
+    description: One task with completion toggle. # inline comment survives edits
+    deep_link: true
+    back:
+      target: home
+    elements:
+      - label: Due date | Tomorrow
+        type: label_value
+      - label: Mark complete
+        type: button
+    navigation:
+      secondary:
+        - label: Edit
+          target: task_new
+          presentation: modal
+    data:
+      reads:
+        - task
+      writes:
+        - task_status
+
+  - id: task_new
+    title: New Task
+    type: form
+    path: /tasks/new
+    description: Create or edit a task.
+    presentation: modal
+    back:
+      target: home
+    elements:
+      - label: Title
+        type: text_field
+      - label: Save
+        type: button
+    data:
+      writes:
+        - task
+
+  # ─────────────────────────────────────────────
+  #  SETTINGS
+  # ─────────────────────────────────────────────
+
+  - id: settings
+    title: Settings
+    type: menu
+    path: /settings
+    description: App preferences.
+    auth: required
+    elements:
+      - label: Push notifications
+        type: toggle
+      - label: About
+        type: list_item
+        target: about
+
+  - id: about
+    title: About
+    type: informational
+    path: /settings/about
+    description: Version and legal info.
+    back:
+      target: settings
+    elements:
+      - label: Todo List v1.0
+        type: paragraph

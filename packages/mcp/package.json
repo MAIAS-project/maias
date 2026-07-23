@@ -1,0 +1,47 @@
+{
+  "name": "@maias/mcp",
+  "version": "0.3.0",
+  "mcpName": "io.github.MAIAS-project/maias",
+  "description": "MCP server exposing MAIAS operations (validate, query, edit, edit_elements) over the core library, for any MCP-capable agent.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MAIAS-project/maias.git",
+    "directory": "packages/mcp"
+  },
+  "keywords": [
+    "maias",
+    "mcp",
+    "model-context-protocol",
+    "information-architecture",
+    "agent",
+    "yaml"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "type": "module",
+  "bin": {
+    "maias-mcp": "./bin/maias-mcp.js"
+  },
+  "main": "./dist/server.js",
+  "types": "./dist/server.d.ts",
+  "files": [
+    "bin",
+    "dist",
+    "NOTICE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "@maias/core": "^0.3.0",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.0"
+  }
+}

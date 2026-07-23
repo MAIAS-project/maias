@@ -1,0 +1,61 @@
+maias: "0.1"
+app:
+  name: Calculator
+  description: A single-screen, action-heavy calculator — the smallest useful MAIAS document.
+  navigation:
+    primary:
+      label: Primary Nav
+      screens:
+        - calculator
+    secondary:
+      label: Secondary Nav
+      screens: []
+  flows:
+    - name: main
+      description: Everything happens on one screen.
+      entry_screen: calculator
+      screens:
+        - calculator
+screens:
+  - id: calculator
+    title: Calculator
+    type: form
+    path: /calculator
+    description: Keypad, live display, and running history. All interaction is non-navigating actions.
+    features:
+      - live_display
+      - keypad
+      - calculation_history
+    actions:
+      - input_digit
+      - input_operator
+      - clear
+      - evaluate
+      - copy_result
+    elements:
+      - label: Calculator
+        type: title
+      - label: Display | 0
+        type: label_value
+      - label: ""
+        type: divider
+      - label: 7 | 8 | 9 | ÷
+        type: chips
+      - label: 4 | 5 | 6 | ×
+        type: chips
+      - label: 1 | 2 | 3 | −
+        type: chips
+      - label: 0 | . | = | +
+        type: chips
+      - label: Clear
+        type: button
+      - label: History
+        type: heading
+      - label: Recent calculations
+        type: x_calc_history_tape
+    data:
+      reads:
+        - calculation_history
+      writes:
+        - calculation_history
+        - current_expression

@@ -1,0 +1,48 @@
+{
+  "name": "@maias/core",
+  "version": "0.3.0",
+  "description": "MAIAS core library: parse, typed model, canonical serialise, graph utilities, safe edits, validation. The single implementation all MAIAS tooling builds on.",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MAIAS-project/maias.git",
+    "directory": "packages/core"
+  },
+  "keywords": [
+    "maias",
+    "information-architecture",
+    "yaml",
+    "schema",
+    "validation",
+    "canonical-form",
+    "agent"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "NOTICE"
+  ],
+  "scripts": {
+    "sync-schema": "node scripts/sync-schema.mjs",
+    "prebuild": "npm run sync-schema",
+    "build": "tsc -p tsconfig.json",
+    "pretypecheck": "npm run sync-schema",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "@cfworker/json-schema": "^4.1.1",
+    "yaml": "^2.8.0"
+  }
+}

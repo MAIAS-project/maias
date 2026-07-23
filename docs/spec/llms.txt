@@ -1,0 +1,216 @@
+# MAIAS v0.2 — condensed reference
+
+MAIAS (Mobile App Information Architecture Schema) describes an app's information
+architecture — screens, navigation, flows, UI elements, states, data — in one YAML
+(or JSON) document. This file is sufficient to author a valid document; the formal
+definition is schema/maias.schema.json; full spec: docs/spec/.
+
+Validate with: maias validate <file>   Format with: maias fmt <file> --write
+
+## Document skeleton
+
+maias: "0.2"                    # required; quoted string, never a number. Versions: "0.1" or
+                                # "0.2" (current). back: is 0.2-only — declare "0.2" to use it;
+                                # a document without 0.2 features may declare "0.1".
+app:
+  name: Todo List              # required
+  description: A minimal list-keeping app.   # recommended
+  links:                       # optional — deep-link scheme
+    scheme: todo
+  navigation:                  # required — the registry
+    primary:
+      label: Primary Nav
+      screens:                 # tab bar, in tab order (renderers hide the bar if <2)
+        - home
+    secondary:
+      label: Secondary Nav
+      screens:                 # EVERY other screen must be listed here
+        - task_detail
+  flows:                       # required, >=1; first flow = app start
+    - name: main               # snake_case, unique
+      description: Browse and manage tasks.
+      entry_screen: home       # must exist AND be listed in this flow's screens
+      screens:
+        - home
+        - task_detail
+screens:                       # required, >=1
+  - id: home                   # snake_case ^[a-z][a-z0-9_]*$, unique
+    title: My Tasks            # required, Title Case
+    type: list                 # required, see screen types
+    path: /tasks               # required, unique, kebab-case, leading /
+    description: All tasks, newest first.   # lint warns if missing
+    features:                  # optional documentation-level capability names
+      - task_list
+    actions:                   # optional documentation-level action NAMES (snake_case strings,
+      - add_task               #   like features). The rendered buttons live in navigation.actions.
+    elements:                  # optional UI declarations, render order (see taxonomy)
+      - label: Search tasks
+        type: search_bar
+      - label: Buy milk
+        type: list_item
+        target: task_detail    # any target must be an existing screen id
+    states:                    # optional; keys limited to empty/loading/error
+      empty:
+        description: First run, or all tasks deleted.
+        elements:              # FULL replacement list, not a merge
+          - label: No tasks yet
+            type: empty_state
+    navigation:
+      # primary:               # allowed ONLY on primary (tab-bar) screens; redundant with the
+      #   - label: My Tasks    #   registry by design and must match app.navigation.primary
+      #     target: home       #   (lint warns otherwise). Omitting it everywhere is fine.
+      secondary:               # contextual links
+        - label: Task Detail
+          target: task_detail
+          presentation: modal  # optional override: push|replace|modal|sheet
+      actions:                 # non-navigating (external: true = leaves the app or hands
+                               #   off to the system: web links, share sheets, mail composers)
+        - label: Rate this app
+          external: true
+    data:
+      reads:                   # snake_case domain data keys
+        - tasks
+      writes:
+        - task_status
+  - id: task_detail
+    title: Task Detail
+    type: detail
+    path: /tasks/:id           # :param binds from URL
+    description: One task, editable status.
+    presentation: modal        # optional screen default: push(default)|replace|modal|sheet
+    auth: required             # optional: none(default)|required
+    deep_link: true            # optional, default false; needs app.links.scheme
+    back:                      # optional (since 0.2): the header back button. No back key = no button.
+      target: home             #   required, existing screen id (dangling = error)
+      # label: Back            #   optional; default label = target screen's title
+
+## Screen types (semantic; do not restrict elements)
+
+action        single-purpose action trigger
+action_sheet  bottom sheet with choices (should have presentation: sheet)
+container     parent grouping child screens
+detail        read-only detail view
+form          user input / editable fields
+informational static content / instructions
+list          scrollable list of items
+map           map-based interface
+marketing     promotional / value proposition
+menu          links to sub-screens
+search        search input with results
+status        live status display
+Custom screen types MUST be x_ prefixed (x_vendor_name); anything else unknown = schema error.
+
+## Element taxonomy (29 core types)
+
+Element = {type required; label per-type; target optional (must exist); presentation optional with target}.
+Label formats: "|"-separated = multi-value (whitespace around | is trimmed, "A | B" == "A|B");
+"\n"-separated = multi-line; literal none = a DELIBERATE skeleton placeholder. Only type is
+schema-required: for text-free types (image, divider, video) write label: "" or omit the key.
+CAUTION: write \n-bearing labels as DOUBLE-QUOTED scalars ("line1\nline2") — an unquoted
+multi-line YAML scalar folds newlines into spaces and silently merges your lines.
+
+TEXT
+title        hero heading; label required
+heading      section heading; label required
+paragraph    body text; label required
+caption      small centred muted text (dividers "or", legal); label required
+bullets      bulleted list; label = \n-separated lines, or none for skeleton bars
+label_value  key-value row; label = "Key | Value"
+LAYOUT
+divider      horizontal rule; label ignored
+spacer       vertical gap; label = height px as string (default 16)
+card         bordered container with bold title; label required; target optional
+ACTIONS
+button       full-width CTA; label required; target optional
+icon_button  circular icon + label below; label required; target optional
+link         inline underlined text; label required; target optional
+chips        pill row (tags/filters); label = "A | B | C"
+INPUTS
+text_field   input box; label = placeholder
+search_bar   pill search input; label = placeholder (default "Search")
+toggle       label + switch row; label required
+checkbox     checkbox + label row; label required
+radio_group  single-choice options; label = "A | B | C"
+dropdown     select row with chevron; label required
+slider       value slider; label required
+MEDIA
+image        16:9 image block; label ignored
+avatar       circle with initial from label (default "U")
+map          4:3 map region; label ignored
+video        16:9 video block; label ignored
+LISTS
+list_item    tappable row, chevron when target set; label required; target optional
+empty_state  centred "nothing here" message; label required
+FEEDBACK
+banner       full-width notice strip; label required
+progress     progress bar, label above; label required
+segmented_control  in-screen tab row; label = "Tab1 | Tab2" (NOT the app tab bar)
+
+Unknown element types: custom types MUST be x_ prefixed (x_vendor_name).
+Renderers MUST render unknown types via fallback and MUST NOT fail.
+Lint warns on unprefixed unknown types (probable typo); never an error.
+
+## Extension fields
+
+Any object may carry x_-prefixed extra fields (x_experiment: paywall_v2).
+Consumers ignore unknown x_ fields and preserve them through edits.
+Unknown fields WITHOUT x_ prefix are schema errors (catches typos).
+
+## Chrome
+
+Tab bar := app.navigation.primary.screens (label = screen title) — derived, never declared;
+no tab_bar/header elements. Headers show the title automatically. The BACK button is DECLARED
+via the screen's back key (see skeleton): give every non-tab, non-entry screen a back target;
+tab roots and journey entries (any flow's entry_screen) omit it. Never model back as a
+navigation.secondary item.
+Modal/sheet screens may declare back too — it names the explicit dismiss target. A screen
+reached from several places declares its DOMINANT entry as back.target; renderers SHOULD
+honour real history when available (spec §4.3), so the static target is the cold-start answer.
+
+## Presentation modes
+
+push (default) advance in journey; replace = journey transition (onboarding→main, no back);
+modal = focused overlay; sheet = bottom sheet. Resolution: link presentation > screen
+presentation > push.
+
+## Hard rules (validator errors)
+
+- ids unique; paths unique and non-colliding (/t/:a vs /t/:b collides). A static segment
+  and a :param at the same position do NOT collide — the static route wins (/tasks/new
+  alongside /tasks/:id is legal and resolves to /tasks/new for that URL)
+- every navigation/element/back target is an existing screen id (no dangling targets)
+- every screen in exactly ONE of app.navigation primary.screens/secondary.screens
+- flow entry_screen exists and is in the flow's screens; flow names unique
+- id/flow/param: ^[a-z][a-z0-9_]*$; path: ^/[a-z0-9-]+(/([a-z0-9-]+|:[a-z][a-z0-9_]*))*$
+
+## Warnings (valid but flagged)
+
+- screen missing description; unreachable screens; orphans (no flow + unreachable)
+- self-referencing target; unprefixed unknown element type
+- deep_link without app.links.scheme; navigation.primary on non-primary screens
+- 0.2-only keys (back:) under maias: "0.1" — declare "0.2"
+- action_sheet screens without presentation: sheet
+
+## Canonical form (maias fmt; SHOULD for documents, editors emit on write)
+
+- Key order — document: maias, app, screens. app: name, description, links, navigation,
+  flows. screen: id, title, type, path, description, presentation, auth, deep_link,
+  back, features, actions, elements, states, navigation, data. items: label, type,
+  target, presentation, external (in that order, when present); back: label, target.
+  x_ keys last.
+- Omit empty/default keys (no "actions: - None", no deep_link: false).
+- Screens ordered by flow membership (flow order, then within-flow order; multi-flow
+  screens under first flow; flowless screens last, sorted by id).
+- 2-space indent; block style only (never [] or {}); plain scalars; maias header quoted.
+- No YAML anchors/tags/merge keys. Comments allowed, non-semantic, MUST survive edits;
+  put intent in description fields, not comments.
+
+## Authoring guidance
+
+- Intent lives in description fields (app, screens, flows, states) — structure says what,
+  descriptions say why.
+- Nest paths to mirror navigation (children under their hub's path).
+- 5-15 elements per screen; declare repeated rows once (one list_item = the row type).
+- Deep-linked screens should be renderable from path params + data.reads alone.
+- data keys name domain data (cart_items), not implementation (api_response);
+  same key = same data across screens.

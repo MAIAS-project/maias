@@ -1,0 +1,39 @@
+# Reproduces the origin prototype's `welcome` bug: navigation targets that don't exist.
+# `register_apple` is well-formed but dangling (lint MAIAS-E003);
+# `register-email` is also malformed kebab-case (schema pattern error).
+maias: "0.1"
+app:
+  name: Broken Auth
+  description: Fixture reproducing the dangling-target bug class.
+  navigation:
+    primary:
+      screens:
+        - welcome
+    secondary:
+      screens:
+        - register
+  flows:
+    - name: auth
+      description: Sign-up journey.
+      entry_screen: welcome
+      screens:
+        - welcome
+        - register
+screens:
+  - id: welcome
+    title: Welcome
+    type: marketing
+    path: /welcome
+    description: Value proposition and sign-up entry.
+    elements:
+      - label: Continue with Apple
+        type: button
+        target: register_apple
+      - label: Continue with email
+        type: button
+        target: register-email
+  - id: register
+    title: Register
+    type: form
+    path: /register
+    description: Account creation.

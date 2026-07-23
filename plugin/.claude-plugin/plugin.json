@@ -1,0 +1,11 @@
+{
+  "name": "maias",
+  "description": "MAIAS (Mobile App Information Architecture Schema): create, edit, and review app IA documents with validated, reference-safe operations. Three skills plus the maias MCP server in one install.",
+  "version": "0.2.0",
+  "author": {
+    "name": "Mark Chitty"
+  },
+  "homepage": "https://github.com/MAIAS-project/maias",
+  "repository": "https://github.com/MAIAS-project/maias-plugin",
+  "license": "Apache-2.0"
+}

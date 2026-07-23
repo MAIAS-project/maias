@@ -1,0 +1,422 @@
+maias: "0.2"
+app:
+  name: Shopfront
+  description: An e-commerce app — catalogue hierarchy with parameterised paths, cart, gated checkout journey ending in a replace transition.
+  links:
+    scheme: shopfront
+  navigation:
+    primary:
+      label: Primary Nav
+      screens:
+        - home
+        - categories
+        - cart
+        - account
+    secondary:
+      label: Secondary Nav
+      screens:
+        - category
+        - sort_options
+        - product
+        - checkout_address
+        - checkout_shipping
+        - checkout_payment
+        - order_confirmation
+        - orders
+        - reorder
+        - store_finder
+  flows:
+    - name: browse
+      description: From storefront to product.
+      entry_screen: home
+      screens:
+        - home
+        - categories
+        - category
+        - sort_options
+        - product
+    - name: checkout
+      description: Cart through payment to confirmation.
+      entry_screen: cart
+      screens:
+        - cart
+        - checkout_address
+        - checkout_shipping
+        - checkout_payment
+        - order_confirmation
+    - name: account
+      description: Orders and account management.
+      entry_screen: account
+      screens:
+        - account
+        - orders
+        - reorder
+        - store_finder
+screens:
+  - id: home
+    title: Home
+    type: marketing
+    path: /home
+    description: Storefront — seasonal campaign, featured categories and products.
+    elements:
+      - label: Summer sale — up to 40% off
+        type: banner
+      - label: ""
+        type: image
+      - label: Featured
+        type: heading
+      - label: Trail runners
+        type: card
+        target: product
+      - label: New in | Bestsellers | Sale
+        type: chips
+      - label: Browse all categories
+        type: button
+        target: categories
+    data:
+      reads:
+        - campaigns
+        - featured_products
+
+  - id: categories
+    title: Categories
+    type: menu
+    path: /categories
+    description: Top level of the catalogue hierarchy.
+    elements:
+      - label: Search products
+        type: search_bar
+      - label: Footwear
+        type: list_item
+        target: category
+      - label: Outerwear
+        type: list_item
+        target: category
+      - label: Equipment
+        type: list_item
+        target: category
+    data:
+      reads:
+        - categories
+
+  - id: category
+    title: Category
+    type: list
+    path: /categories/:category_id
+    description: Product listing for one category, with filtering and sorting.
+    back:
+      target: categories
+    elements:
+      - label: Filter by price
+        type: slider
+      - label: Sort by relevance
+        type: dropdown
+      - label: More sort options
+        type: link
+        target: sort_options
+      - label: Waterproof | Vegan | Sale
+        type: chips
+      - label: ""
+        type: divider
+      - label: Trail runners — £89
+        type: list_item
+        target: product
+      - label: Approach shoes — £120
+        type: list_item
+        target: product
+    states:
+      empty:
+        description: Filters excluded every product.
+        elements:
+          - label: Nothing matches these filters
+            type: empty_state
+          - label: Clear filters
+            type: button
+      loading:
+        description: Listing fetch in progress.
+    data:
+      reads:
+        - products
+        - filters
+      writes:
+        - filters
+
+  - id: sort_options
+    title: Sort By
+    type: action_sheet
+    path: /categories/:category_id/sort
+    description: Sort order for the category listing, presented as a bottom sheet over it.
+    presentation: sheet
+    elements:
+      - label: Relevance | Price low to high | Price high to low | Newest first
+        type: radio_group
+      - label: Apply
+        type: button
+    data:
+      writes:
+        - filters
+
+  - id: product
+    title: Product
+    type: detail
+    path: /categories/:category_id/products/:product_id
+    description: Product page — gallery, options, reviews; externally addressable for sharing.
+    deep_link: true
+    back:
+      target: category
+    elements:
+      - label: ""
+        type: image
+      - label: Trail Runners
+        type: title
+      - label: Price | £89
+        type: label_value
+      - label: UK 8 | UK 9 | UK 10 | UK 11
+        type: radio_group
+      - label: Add to cart
+        type: button
+        target: cart
+      - label: Wishlist
+        type: icon_button
+      - label: Reviews
+        type: heading
+      - label: Customer photos and ratings
+        type: x_shop_reviews_carousel
+    navigation:
+      actions:
+        - label: Share product
+          external: true
+    data:
+      reads:
+        - product
+        - reviews
+      writes:
+        - cart_items
+
+  - id: cart
+    title: Cart
+    type: list
+    path: /cart
+    description: Current basket with totals; entry to the checkout journey.
+    elements:
+      - label: Trail Runners — UK 9
+        type: list_item
+        target: product
+      - label: Subtotal | £89
+        type: label_value
+      - label: Shipping | Calculated at checkout
+        type: label_value
+      - label: ""
+        type: divider
+      - label: Checkout
+        type: button
+        target: checkout_address
+    states:
+      empty:
+        description: Nothing in the basket.
+        elements:
+          - label: Your cart is empty
+            type: empty_state
+          - label: Browse categories
+            type: button
+            target: categories
+    data:
+      reads:
+        - cart_items
+      writes:
+        - cart_items
+
+  - id: checkout_address
+    title: Delivery Address
+    type: form
+    path: /cart/checkout/address
+    description: First checkout step — where the order ships.
+    auth: required
+    back:
+      target: cart
+    elements:
+      - label: Checkout progress
+        type: progress
+      - label: Full name
+        type: text_field
+      - label: Street address
+        type: text_field
+      - label: Postcode
+        type: text_field
+      - label: Continue to shipping
+        type: button
+        target: checkout_shipping
+    data:
+      reads:
+        - saved_addresses
+      writes:
+        - delivery_address
+
+  - id: checkout_shipping
+    title: Shipping Method
+    type: form
+    path: /cart/checkout/shipping
+    description: Second checkout step — delivery speed.
+    auth: required
+    back:
+      target: cart
+    elements:
+      - label: Checkout progress
+        type: progress
+      - label: Standard (3–5 days) — free | Express (1–2 days) — £5 | Next day — £10
+        type: radio_group
+      - label: Continue to payment
+        type: button
+        target: checkout_payment
+    data:
+      writes:
+        - shipping_method
+
+  - id: checkout_payment
+    title: Payment
+    type: form
+    path: /cart/checkout/payment
+    description: Final checkout step — pay and place the order.
+    auth: required
+    back:
+      target: cart
+    elements:
+      - label: Checkout progress
+        type: progress
+      - label: Card number
+        type: text_field
+      - label: Saved cards
+        type: dropdown
+      - label: Save this card for next time
+        type: checkbox
+      - label: Order total | £94
+        type: label_value
+      - label: Place order
+        type: button
+        target: order_confirmation
+        presentation: replace
+    data:
+      reads:
+        - payment_methods
+        - cart_items
+      writes:
+        - order
+
+  - id: order_confirmation
+    title: Order Confirmed
+    type: informational
+    path: /cart/checkout/confirmation
+    description: Journey exit — order placed; checkout history is replaced so back cannot re-enter payment.
+    presentation: replace
+    back:
+      target: cart
+    elements:
+      - label: Thanks — your order is on its way
+        type: banner
+      - label: Order number | SF-10482
+        type: label_value
+      - label: ""
+        type: divider
+      - label: View my orders
+        type: button
+        target: orders
+      - label: Continue shopping
+        type: button
+        target: home
+        presentation: replace
+    data:
+      reads:
+        - order
+
+  - id: account
+    title: Account
+    type: menu
+    path: /account
+    description: Account hub — orders, addresses, preferences.
+    auth: required
+    elements:
+      - label: You
+        type: avatar
+      - label: My orders
+        type: list_item
+        target: orders
+      - label: Find a store
+        type: list_item
+        target: store_finder
+      - label: Saved addresses
+        type: list_item
+      - label: Marketing emails
+        type: toggle
+    data:
+      reads:
+        - account_profile
+
+  - id: orders
+    title: My Orders
+    type: list
+    path: /account/orders
+    description: Order history with status per order.
+    auth: required
+    back:
+      target: account
+    elements:
+      - label: SF-10482 — out for delivery
+        type: list_item
+      - label: SF-10391 — delivered
+        type: list_item
+      - label: Reorder last order
+        type: button
+        target: reorder
+    states:
+      empty:
+        description: No orders placed yet.
+        elements:
+          - label: No orders yet
+            type: empty_state
+    data:
+      reads:
+        - orders
+
+  - id: reorder
+    title: Reorder
+    type: action
+    path: /account/orders/reorder
+    description: Single-purpose action — re-add a past order's items to the cart in one tap.
+    presentation: modal
+    elements:
+      - label: Reorder SF-10391?
+        type: heading
+      - label: "Approach shoes — UK 9
+
+          Wool hiking socks × 2"
+        type: bullets
+      - label: "24"
+        type: spacer
+      - label: Add items to cart
+        type: button
+        target: cart
+    data:
+      reads:
+        - orders
+      writes:
+        - cart_items
+
+  - id: store_finder
+    title: Find a Store
+    type: map
+    path: /stores
+    description: Physical stores on a map, nearest first.
+    back:
+      target: account
+    elements:
+      - label: Search near a postcode
+        type: search_bar
+      - label: ""
+        type: map
+      - label: Camden — 0.8 mi, open until 18:00
+        type: list_item
+      - label: Opening hours vary on bank holidays
+        type: caption
+    data:
+      reads:
+        - stores

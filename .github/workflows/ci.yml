@@ -1,0 +1,28 @@
+# The three quality gates from CLAUDE.md, exactly as run locally:
+# workspace typecheck · vitest at the repo root · tsc in MAIAS_browser.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # npm runs workspace scripts alphabetically, not topologically, so build
+      # @maias/core first — cli/mcp compile and typecheck against its dist.
+      # MAIAS_browser has no build script; --if-present skips it.
+      - run: npm run build -w @maias/core
+      - run: npm run build
+      - run: npm run typecheck
+      - run: npx vitest run
+      - run: npx tsc --noEmit
+        working-directory: MAIAS_browser

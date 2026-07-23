@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "maias": {
+      "command": "npx",
+      "args": ["-y", "@maias/mcp"]
+    }
+  }
+}
